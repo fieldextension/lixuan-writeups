@@ -155,14 +155,43 @@ Registering some of the non-power-of-2 rotation keys that were used by eg. the R
 \noindent\fbox{%
     \begin{minipage}{\textwidth}
 
-    \textbf{Problem:} Key sizes are $\approx$ 0.9 GB under toy params and $\approx$ 30 GB under secure. 
+    \textbf{Problem:} Key sizes are $\approx$ 0.9 GB under toy params and $\approx$ 20 GB under secure. 
     Large keys cause slow keygen and upload, high VRAM pressure, inability to retain contexts in memory requires frequent cache accesses.
 
     \end{minipage}%
 }
 \vspace{0.3cm}
 
-\textit{Solution process:} Trimming rotation keys. 
-Future step to consider taking: seeded keys so that the upload is small (at the cost of having to recover the keys server-side afterwards).
+\textit{Solution process:} Trimming rotation keys gave about a 25\% reduction in our case, but this effectiveness will largely depend on what keys are actually being used and whether the BFS-composition costs more in runtime/graph complexity.
+
+Seeded keys have been implemented; the pseudorandom public part $a$ of the ciphertext $(a, b)$ is now sent as a 48-byte seed, basically halving the upload.
+To use this, you must verify that the PRF (generating $a$, not the scoring PRF) behaves identically across machines given the same seed.
+Server-side recovery from seed took $\approx$15 sec on Apollo at secure params, and $\approx$15 GB keys per user remain resident in VRAM so we still have to use a pretty aggressive LRU policy.
+
+\section{Slow Python fallback}
+
+\noindent\fbox{%
+    \begin{minipage}{\textwidth}
+
+    \textbf{Problem:} Keygen at secure params took 2.5 hours to fully realize all polys when run on the CPU backend; however, we need to run keygen on non-CUDA devices for the demo, as having the keygen on-server breaks the security assumption.
+
+    \end{minipage}%
+}
+\vspace{0.3cm}
+
+\textit{Solution process:} Swift implementation of seeded keygen brought the time down to 5.5 min on M4 series MacBook Pro/Mac mini. Andrii is working on a Rust implementation for better cross-platform support.
+
+\section{Using the DGX Spark}
+
+\noindent\fbox{%
+    \begin{minipage}{\textwidth}
+
+    \textbf{Problem:} TBD
+
+    \end{minipage}%
+}
+\vspace{0.3cm}
+
+\textit{Solution process:} TBD
 
 \end{document}
