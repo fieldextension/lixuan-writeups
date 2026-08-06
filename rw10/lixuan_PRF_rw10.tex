@@ -1,0 +1,68 @@
+\documentclass{beamer}
+%Information to be included in the title page:
+\title{Computing psuedorandom functions within Ren}
+
+\author{}
+\institute{Field Extension Institute}
+
+\date{RW10, 8th August 2026}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Motivation}
+\begin{itemize}
+    \item Sources of cryptographic (psuedo)randomness are generally useful things to have.
+    \item Plaintext-generated and public-key-encrypted randomness may not be viable (eg. untrusted server or other party).
+\end{itemize}
+
+\vspace{1cm}
+\textit{Specific use case}: rngeo, an FHE-based location game where scoring was based on a random number generator seeded by location and timestamp\footnote{* strictly speaking, we're using a pseudorandom number generator instead of a true PRF}, among other things.
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{The problem}
+Can we efficiently (in depth, compute, memory use) implement a pseudorandom function as a circuit in Ren which takes encrypted inputs?
+\end{frame}
+
+\begin{frame}
+\frametitle{Common PRFs and barriers we observed}
+
+\begin{itemize}
+    \item Hash-based: hash a counter and secret seed to get a pseudorandom output. 
+    Something like SHA-256, but that requires mod-$2^{32}$ addition which is tricky whether we encode inputs as ints or bitstrings (adders necessarily have to be deep because of carries).
+    \item Cipher-based: either block or stream ciphers, generating a sequence of pseudorandom outputs.
+    AES has the SubBytes step which is a byte-substitution lookup table, and ChaCha also requires mod-$2^{32}$ addition so neither are particularly convenient to implement.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Some FHE-friendly PRF constructions}
+
+\begin{itemize}
+    \item Simple substitution-permutation networks (SPNs) which use FHE-friendly substitution (eg. polynomials) and permutation (eg. rotations) layers.
+    This did not achieve very good confusion/diffusion metrics - Shannon's properties of secure ciphers.
+    \item Rasta (\href{https://eprint.iacr.org/2018/181.pdf}{eprint 2018/181}) is a stream cipher using alternating substitution and affine transforms over a binary bitstream.
+    It is designed to have low AND-depth and use few ANDs per bit, with the only other operation being XOR (both of which are relatively simple in Ren).
+    \item HERA (\href{https://eprint.iacr.org/2020/1335.pdf}{eprint 2020/135}) was proposed as part of a CKKS/FV transciphering framework, and is a stream cipher on $\mathbb{Z}_t$.
+    It is more performant than Rasta, but requires evaluating operations over a general modulus $t$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Current status}
+rngeo uses a Rasta-like PRF implementation on a 256-bit input; the same substitution layer as Rasta, but a different affine layer (Rasta's uses a matrix multiplication).
+
+\vspace{0.5cm}
+\textit{Current numbers:} 256-bit input/output, 4 rounds of alternating affine/subst. followed by a final affine, 8 rotation keys (at rngeo secure params, $\approx 715$ MB per key), ~6 depth per round.
+Diffusion per bit-flip $\approx 0.39$, per-slot and pooled digit distributions within 15\% of uniform. 
+
+\vspace{0.5cm}
+\textit{Potential holes:} the round constants for each affine layer are still generated server-side in plaintext. 
+\end{frame}
+
+\end{document}
