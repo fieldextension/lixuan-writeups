@@ -5,7 +5,7 @@
 \author{}
 \institute{Field Extension Institute}
 
-\date{RW10, 8th August 2026}
+\date{RW10, 9th August 2026}
 
 \begin{document}
 
@@ -34,9 +34,9 @@ Can we efficiently (in depth, compute, memory use) implement a pseudorandom func
 
 \begin{itemize}
     \item Hash-based: hash a counter and secret seed to get a pseudorandom output. 
-    Something like SHA-256, but that requires mod-$2^{32}$ addition which is tricky whether we encode inputs as ints or bitstrings (adders necessarily have to be deep because of carries).
+    Something like SHA-256, but that requires mod-$2^{32}$ addition which is tricky whether we encode inputs as ints or bitstrings. 
     \item Cipher-based: either block or stream ciphers, generating a sequence of pseudorandom outputs.
-    AES has the SubBytes step which is a byte-substitution lookup table, and ChaCha also requires mod-$2^{32}$ addition so neither are particularly convenient to implement.
+    AES has the SubBytes step which is a byte-substitution lookup table (8 depth for a polynomial that evaluates the LUT), and ChaCha also requires mod-$2^{32}$ addition so neither are particularly convenient to implement.
 \end{itemize}
 \end{frame}
 
@@ -63,6 +63,15 @@ Diffusion per bit-flip $\approx 0.39$, per-slot and pooled digit distributions w
 
 \vspace{0.5cm}
 \textit{Potential holes:} the round constants for each affine layer are still generated server-side in plaintext. 
+\end{frame}
+
+\begin{frame}
+\frametitle{Potential work directions}
+\begin{itemize}
+    \item Implement one of the common PRFs: involves coding up the missing components (eg. 32-bit adders or AES' SubBytes LUT)
+    \item Optimization of existing circuit: how can we make the current implementation(s) faster, lower depth, etc?
+    \item Search for other potential PRFs: what other PRFs can potentially be used within FHE?
+\end{itemize}
 \end{frame}
 
 \end{document}
