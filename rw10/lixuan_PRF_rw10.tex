@@ -13,11 +13,13 @@
 
 \begin{frame}
 \frametitle{Motivation}
-\begin{itemize}
-    \item Sources of cryptographic (psuedo)randomness are generally useful things to have.
+\begin{itemize}[<+->]
+    \item Sources of (psuedo)randomness are essential to cryptography libraries.
+    \item They also enable the class of randomized algorithms (albeit costly).
     \item Plaintext-generated and public-key-encrypted randomness may not be viable (eg. untrusted server or other party).
 \end{itemize}
 
+\pause
 \vspace{1cm}
 \textit{Specific use case}: rngeo, an FHE-based location game where scoring was based on a random number generator seeded by location and timestamp\footnote{* strictly speaking, we're using a pseudorandom number generator instead of a true PRF}, among other things.
 
@@ -32,7 +34,7 @@ Can we efficiently (in depth, compute, memory use) implement a pseudorandom func
 \begin{frame}
 \frametitle{Common PRFs and barriers we observed}
 
-\begin{itemize}
+\begin{itemize}[<+->]
     \item Hash-based: hash a counter and secret seed to get a pseudorandom output. 
     Something like SHA-256, but that requires mod-$2^{32}$ addition which is tricky whether we encode inputs as ints or bitstrings. 
     \item Cipher-based: either block or stream ciphers, generating a sequence of pseudorandom outputs.
@@ -43,7 +45,7 @@ Can we efficiently (in depth, compute, memory use) implement a pseudorandom func
 \begin{frame}
 \frametitle{Some FHE-friendly PRF constructions}
 
-\begin{itemize}
+\begin{itemize}[<+->]
     \item Simple substitution-permutation networks (SPNs) which use FHE-friendly substitution (eg. polynomials) and permutation (eg. rotations) layers.
     This did not achieve very good confusion/diffusion metrics - Shannon's properties of secure ciphers.
     \item Rasta (\href{https://eprint.iacr.org/2018/181.pdf}{eprint 2018/181}) is a stream cipher using alternating substitution and affine transforms over a binary bitstream.
@@ -55,12 +57,14 @@ Can we efficiently (in depth, compute, memory use) implement a pseudorandom func
 
 \begin{frame}
 \frametitle{Current status}
-rngeo uses a Rasta-like PRF implementation on a 256-bit input; the same substitution layer as Rasta, but a different affine layer (Rasta's uses a matrix multiplication).
+rngeo uses a Rasta-like PRF implementation on a 256-bit input; the same substitution layer as Rasta, but has a different affine layer (Rasta's uses a matrix multiplication).
 
+\pause
 \vspace{0.5cm}
 \textit{Current numbers:} 256-bit input/output, 4 rounds of alternating affine/subst. followed by a final affine, 8 rotation keys (at rngeo secure params, $\approx 715$ MB per key), ~6 depth per round.
 Diffusion per bit-flip $\approx 0.39$, per-slot and pooled digit distributions within 15\% of uniform. 
 
+\pause
 \vspace{0.5cm}
 \textit{Potential holes:} the round constants for each affine layer are still generated server-side in plaintext. 
 \end{frame}
